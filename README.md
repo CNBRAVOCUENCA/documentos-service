@@ -45,10 +45,24 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 - [x] Estructura base del proyecto
 - [x] Modelo de dominio `Document`
 - [x] `DocumentRepository` (acceso a datos)
-- [ ] `DocumentService` (lógica de negocio: validación, checksum, duplicados)
-- [ ] Endpoints REST (`POST/GET/PUT/DELETE /documents`)
+- [x] `DocumentService` (lógica de negocio: validación, checksum, duplicados)
+- [x] Endpoints REST (`POST/GET/DELETE /documents`, `GET /health`)
 - [ ] Dockerfile + integración con Traefik
 - [ ] Comunicación con el microservicio de Extracción (Saga)
+
+## Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/v1/documents` | Sube un PDF, lo valida y lo da de alta (form-data: `name`, `file`) |
+| GET | `/api/v1/documents` | Lista documentos (paginado: `skip`, `limit`) |
+| GET | `/api/v1/documents/{id}` | Obtiene un documento por ID |
+| DELETE | `/api/v1/documents/{id}` | Elimina un documento |
+| GET | `/health` | Health check |
+
+Nota: `extracted_text` e `is_processed` quedan sin completar al crear el
+documento — se actualizan luego, cuando se conecte el microservicio de
+Extracción de texto.
 
 ## Cómo correr los tests
 
