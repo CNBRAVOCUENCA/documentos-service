@@ -37,6 +37,7 @@ class DocumentService:
             file_path=f"memory://documents/{checksum}.pdf",
             checksum=checksum,
             file_size=len(file_content),
+            file_content=file_content,
         )
         return self.repository.create(document)
 

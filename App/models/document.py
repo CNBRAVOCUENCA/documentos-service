@@ -13,5 +13,6 @@ class Document(BaseModel):
     file_path: str
     checksum: str
     file_size: int
+    file_content: Optional[bytes] = None
     extracted_text: Optional[str] = None
     is_processed: bool = False

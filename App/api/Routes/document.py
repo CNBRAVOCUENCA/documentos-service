@@ -3,6 +3,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi.responses import Response
 from pymongo.database import Database
 
 from App.repositories.document_repository import DocumentRepository
@@ -44,6 +45,14 @@ async def list_documents(
 async def get_document(doc_id: int, service: DocumentService = Depends(_get_service)) -> DocumentResponse:
     document = service.get_document(doc_id)
     return DocumentResponse.model_validate(document)
+
+
+@router.get("/{doc_id}/file")
+async def get_document_file(doc_id: int, service: DocumentService = Depends(_get_service)) -> Response:
+    """Devuelve el contenido binario del PDF, para que otros microservicios
+    (ej. Extracción de texto) puedan consumirlo."""
+    document = service.get_document(doc_id)
+    return Response(content=document.file_content, media_type="application/pdf")
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)

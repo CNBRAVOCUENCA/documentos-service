@@ -91,3 +91,21 @@ def test_delete_document(client):
 
     get_response = client.get(f"/api/v1/documents/{created['id']}")
     assert get_response.status_code == 404
+
+
+def test_get_document_file_returns_raw_pdf_bytes(client):
+    created = client.post(
+        "/api/v1/documents",
+        data={"name": "A"},
+        files={"file": ("a.pdf", VALID_PDF, "application/pdf")},
+    ).json()
+
+    response = client.get(f"/api/v1/documents/{created['id']}/file")
+    assert response.status_code == 200
+    assert response.content == VALID_PDF
+    assert response.headers["content-type"] == "application/pdf"
+
+
+def test_get_document_file_missing_returns_404(client):
+    response = client.get("/api/v1/documents/999999/file")
+    assert response.status_code == 404

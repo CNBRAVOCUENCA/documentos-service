@@ -43,12 +43,16 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 ## Estado actual
 
 - [x] Estructura base del proyecto
-- [x] Modelo de dominio `Document`
+- [x] Modelo de dominio `Document` (incluye `file_content`: el binario real del PDF)
 - [x] `DocumentRepository` (acceso a datos)
 - [x] `DocumentService` (lógica de negocio: validación, checksum, duplicados)
-- [x] Endpoints REST (`POST/GET/DELETE /documents`, `GET /health`)
+- [x] Endpoints REST (`POST/GET/DELETE /documents`, `GET /documents/{id}/file`, `GET /health`)
+- [x] Consumido de verdad por `extraccion-service` (segundo microservicio),
+      vía `GET /documents/{id}/file` — probado con ambos servicios corriendo
+      en paralelo, comunicación HTTP real
 - [ ] Dockerfile + integración con Traefik
-- [ ] Comunicación con el microservicio de Extracción (Saga)
+- [ ] Persistir de vuelta `extracted_text`/`is_processed` cuando el
+      microservicio de Extracción termine de procesar (vía Saga)
 
 ## Endpoints
 
@@ -56,13 +60,21 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 |---|---|---|
 | POST | `/api/v1/documents` | Sube un PDF, lo valida y lo da de alta (form-data: `name`, `file`) |
 | GET | `/api/v1/documents` | Lista documentos (paginado: `skip`, `limit`) |
-| GET | `/api/v1/documents/{id}` | Obtiene un documento por ID |
+| GET | `/api/v1/documents/{id}` | Obtiene los metadatos de un documento por ID |
+| GET | `/api/v1/documents/{id}/file` | Descarga el binario del PDF (consumido por `extraccion-service`) |
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |
 
 Nota: `extracted_text` e `is_processed` quedan sin completar al crear el
 documento — se actualizan luego, cuando se conecte el microservicio de
 Extracción de texto.
+
+## Documentación teórica
+
+Ver [`docs/`](./docs/00-INDICE.md) para el material de estudio: arquitectura
+en capas, clean code (DRY/SOLID/KISS/YAGNI), TDD, el criterio de corte de
+microservicios, y los conceptos de sistemas distribuidos (Traefik, Saga,
+Redis, Circuit Breaker) que se van a implementar en los próximos servicios.
 
 ## Cómo correr los tests
 
