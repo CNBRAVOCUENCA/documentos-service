@@ -46,7 +46,7 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 - [x] Modelo de dominio `Document` (incluye `file_content`: el binario real del PDF)
 - [x] `DocumentRepository` (acceso a datos)
 - [x] `DocumentService` (lógica de negocio: validación, checksum, duplicados)
-- [x] Endpoints REST (`POST/GET/DELETE /documents`, `GET /documents/{id}/file`, `GET /health`)
+- [x] Endpoints REST (`POST/GET/PUT/DELETE /documents`, `GET /documents/{id}/file`, `GET /health`)
 - [x] Consumido de verdad por `extraccion-service` (segundo microservicio),
       vía `GET /documents/{id}/file` — probado con ambos servicios corriendo
       en paralelo, comunicación HTTP real
@@ -61,6 +61,7 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 | POST | `/api/v1/documents` | Sube un PDF, lo valida y lo da de alta (form-data: `name`, `file`) |
 | GET | `/api/v1/documents` | Lista documentos (paginado: `skip`, `limit`) |
 | GET | `/api/v1/documents/{id}` | Obtiene los metadatos de un documento por ID |
+| PUT | `/api/v1/documents/{id}` | Actualiza el nombre del documento |
 | GET | `/api/v1/documents/{id}/file` | Descarga el binario del PDF (consumido por `extraccion-service`) |
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |

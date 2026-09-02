@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from pymongo.database import Database
 
 from App.repositories.document_repository import DocumentRepository
-from App.schemas.document import DocumentResponse
+from App.schemas.document import DocumentResponse, DocumentUpdate
 from App.services.document_service import DocumentService
 from App.utils.database import get_db
 
@@ -53,6 +53,16 @@ async def get_document_file(doc_id: int, service: DocumentService = Depends(_get
     (ej. Extracción de texto) puedan consumirlo."""
     document = service.get_document(doc_id)
     return Response(content=document.file_content, media_type="application/pdf")
+
+
+@router.put("/{doc_id}", response_model=DocumentResponse)
+async def update_document(
+    doc_id: int,
+    payload: DocumentUpdate,
+    service: DocumentService = Depends(_get_service),
+) -> DocumentResponse:
+    document = service.update_document(doc_id, payload.name)
+    return DocumentResponse.model_validate(document)
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -109,3 +109,21 @@ def test_get_document_file_returns_raw_pdf_bytes(client):
 def test_get_document_file_missing_returns_404(client):
     response = client.get("/api/v1/documents/999999/file")
     assert response.status_code == 404
+
+
+def test_update_document_name(client):
+    created = client.post(
+        "/api/v1/documents",
+        data={"name": "A"},
+        files={"file": ("a.pdf", VALID_PDF, "application/pdf")},
+    ).json()
+
+    response = client.put(f"/api/v1/documents/{created['id']}", json={"name": "Actualizado"})
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Actualizado"
+
+
+def test_update_missing_document_returns_404(client):
+    response = client.put("/api/v1/documents/999999", json={"name": "Actualizado"})
+    assert response.status_code == 404

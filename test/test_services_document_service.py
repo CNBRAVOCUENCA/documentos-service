@@ -85,3 +85,15 @@ def test_delete_document_success(service, fake_db):
     fake_db._cols["documents"].delete_one.return_value.deleted_count = 1
     service.delete_document(5)
     fake_db._cols["documents"].delete_one.assert_called_once_with({"id": 5})
+
+
+def test_update_document_name(service, fake_db):
+    fake_db._cols["documents"].find_one.side_effect = [
+        {"id": 5, "name": "Anterior", "file_path": "p", "checksum": "x", "file_size": 1,
+         "file_content": None, "original_filename": "a.pdf", "extracted_text": None, "is_processed": False},
+        {"id": 5, "name": "Nuevo", "file_path": "p", "checksum": "x", "file_size": 1,
+         "file_content": None, "original_filename": "a.pdf", "extracted_text": None, "is_processed": False},
+    ]
+    result = service.update_document(5, "Nuevo")
+    assert result.name == "Nuevo"
+    fake_db._cols["documents"].update_one.assert_called_once()

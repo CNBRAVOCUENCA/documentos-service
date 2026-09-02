@@ -8,6 +8,7 @@ al crear el documento y se actualizan más adelante vía comunicación entre
 servicios (Saga).
 """
 
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from App.exceptions import DocumentNotFoundError, DuplicateDocumentError
@@ -34,6 +35,7 @@ class DocumentService:
 
         document = Document(
             name=normalized_name,
+            original_filename=normalized_filename,
             file_path=f"memory://documents/{checksum}.pdf",
             checksum=checksum,
             file_size=len(file_content),
@@ -50,6 +52,18 @@ class DocumentService:
     def delete_document(self, document_id: int) -> None:
         self._get_or_raise(document_id)
         self.repository.delete(document_id)
+
+    def update_document(self, document_id: int, name: str) -> Document:
+        """Actualiza los metadatos editables de un documento."""
+        self._get_or_raise(document_id)
+        normalized_name = StringValidator.validate_required_string(name, "nombre del documento")
+        updated = self.repository.update(
+            document_id,
+            {"name": normalized_name, "updated_at": datetime.now(timezone.utc)},
+        )
+        if not updated:
+            raise DocumentNotFoundError(f"Documento {document_id} no encontrado")
+        return updated
 
     def _get_or_raise(self, document_id: int) -> Document:
         document = self.repository.get_by_id(document_id)

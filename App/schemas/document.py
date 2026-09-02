@@ -1,5 +1,6 @@
 """Schemas (DTOs) de entrada/salida de la API."""
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -12,8 +13,17 @@ class DocumentResponse(BaseModel):
 
     id: int
     name: str
+    original_filename: str
     file_path: str
     checksum: str
     file_size: int
     extracted_text: Optional[str] = None
     is_processed: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class DocumentUpdate(BaseModel):
+    """Campos modificables por el dueño del documento."""
+
+    name: str

@@ -31,6 +31,11 @@ def get_db() -> Database:
     return get_database()
 
 
+def ping_database() -> None:
+    """Verifica que MongoDB responda dentro del timeout configurado."""
+    get_database().command("ping")
+
+
 def ensure_indexes() -> None:
     """Crea los índices necesarios en la colección `documents`."""
     db = get_database()
