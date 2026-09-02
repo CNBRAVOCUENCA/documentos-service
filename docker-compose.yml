@@ -1,0 +1,50 @@
+services:
+  traefik:
+    image: traefik:v3.5
+    command:
+      - --api.dashboard=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+
+  mongo:
+    image: mongo:8.0
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+
+  documentos:
+    build: .
+    environment:
+      DATABASE_URL: mongodb://mongo:27017
+      DATABASE_NAME: documentos_service
+      DATABASE_TIMEOUT_MS: 5000
+    depends_on:
+      - mongo
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=documentos_proxy
+      - traefik.http.routers.documentos.rule=Host(`documentos.localhost`)
+      - traefik.http.routers.documentos.entrypoints=web
+      - traefik.http.services.documentos.loadbalancer.server.port=8000
+      - traefik.http.services.documentos.loadbalancer.healthcheck.path=/health
+      - traefik.http.services.documentos.loadbalancer.healthcheck.interval=10s
+    networks:
+      - proxy
+      - backend
+
+networks:
+  proxy:
+    name: documentos_proxy
+  backend:
+    name: documentos_backend
+
+volumes:
+  mongo_data:

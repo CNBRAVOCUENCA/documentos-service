@@ -50,7 +50,7 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 - [x] Consumido de verdad por `extraccion-service` (segundo microservicio),
       vía `GET /documents/{id}/file` — probado con ambos servicios corriendo
       en paralelo, comunicación HTTP real
-- [ ] Dockerfile + integración con Traefik
+- [x] Dockerfile + integración con Traefik mediante Docker Compose y labels
 - [ ] Persistir de vuelta `extracted_text`/`is_processed` cuando el
       microservicio de Extracción termine de procesar (vía Saga)
 
@@ -68,6 +68,22 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 Nota: `extracted_text` e `is_processed` quedan sin completar al crear el
 documento — se actualizan luego, cuando se conecte el microservicio de
 Extracción de texto.
+
+## Ejecutar con Docker y Traefik
+
+Requiere Docker Desktop. Desde la raíz de este repositorio:
+
+```powershell
+docker compose up --build -d
+Invoke-RestMethod http://documentos.localhost/health
+docker compose logs -f documentos
+docker compose down
+```
+
+Traefik detecta el contenedor mediante labels y publica el servicio en
+`http://documentos.localhost`. La API también queda disponible bajo
+`/api/v1/documents`.
+
 
 ## Documentación teórica
 
