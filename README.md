@@ -95,6 +95,15 @@ Redis, Circuit Breaker) que se van a implementar en los próximos servicios.
 
 ## Cómo correr los tests
 
+Con **uv** (recomendado, más rápido y con `uv.lock` para versiones reproducibles):
+
+```bash
+uv sync --extra dev
+uv run --extra dev pytest test/ -v
+```
+
+O con pip tradicional:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
