@@ -60,4 +60,9 @@ class DocumentRepository:
         if payload is None:
             return None
         payload = {k: v for k, v in payload.items() if k != "_id"}
+        # MongoDB devuelve los bytes como bson.Binary; convertir a bytes puros
+        # para que el contenido del PDF se preserve exacto al reconstruir el modelo
+        # y al enviarlo por HTTP a otros microservicios (ej. extraccion-service).
+        if payload.get("file_content") is not None:
+            payload["file_content"] = bytes(payload["file_content"])
         return Document(**payload)
