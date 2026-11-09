@@ -1,9 +1,8 @@
 """Test de regresión: el binario del PDF debe preservarse exacto al pasar por
 MongoDB (que lo devuelve como bson.Binary), no corromperse."""
 
-from bson import Binary
-
 from App.repositories.document_repository import DocumentRepository
+from bson import Binary
 
 
 def test_deserialize_preserva_bytes_desde_bson_binary(fake_db):

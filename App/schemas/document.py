@@ -1,7 +1,6 @@
 """Schemas (DTOs) de entrada/salida de la API."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,7 +16,7 @@ class DocumentResponse(BaseModel):
     file_path: str
     checksum: str
     file_size: int
-    extracted_text: Optional[str] = None
+    extracted_text: str | None = None
     is_processed: bool
     created_at: datetime
     updated_at: datetime

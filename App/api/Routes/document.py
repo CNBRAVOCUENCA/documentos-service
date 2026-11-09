@@ -1,6 +1,5 @@
 """Rutas REST del microservicio de Documentos."""
 
-from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from fastapi.responses import Response
@@ -33,10 +32,10 @@ async def create_document(
         await file.close()
 
 
-@router.get("", response_model=List[DocumentResponse])
+@router.get("", response_model=list[DocumentResponse])
 async def list_documents(
     skip: int = 0, limit: int = 10, service: DocumentService = Depends(_get_service)
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     documents = service.get_all_documents(skip, limit)
     return [DocumentResponse.model_validate(doc) for doc in documents]
 

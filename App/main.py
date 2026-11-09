@@ -4,11 +4,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 
-from App.logging_config import configurar_logging
-
 from App.api import document_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
+from App.logging_config import configurar_logging
 from App.utils.database import ensure_indexes, ping_database
 
 

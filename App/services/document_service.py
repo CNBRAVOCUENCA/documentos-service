@@ -8,8 +8,7 @@ al crear el documento y se actualizan más adelante vía comunicación entre
 servicios (Saga).
 """
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from App.exceptions import DocumentNotFoundError, DuplicateDocumentError
 from App.models.document import Document
@@ -23,7 +22,7 @@ class DocumentService:
     def __init__(self, repository: DocumentRepository):
         self.repository = repository
 
-    def create_document(self, name: str, filename: Optional[str], file_content: bytes) -> Document:
+    def create_document(self, name: str, filename: str | None, file_content: bytes) -> Document:
         """Valida, deduplica y persiste un nuevo documento."""
         normalized_name = StringValidator.validate_required_string(name, "nombre del documento")
         normalized_filename = PdfValidator.validate_filename(filename)
@@ -46,7 +45,7 @@ class DocumentService:
     def get_document(self, document_id: int) -> Document:
         return self._get_or_raise(document_id)
 
-    def get_all_documents(self, skip: int = 0, limit: int = 10) -> List[Document]:
+    def get_all_documents(self, skip: int = 0, limit: int = 10) -> list[Document]:
         return self.repository.get_all(skip, limit)
 
     def delete_document(self, document_id: int) -> None:
@@ -59,7 +58,7 @@ class DocumentService:
         normalized_name = StringValidator.validate_required_string(name, "nombre del documento")
         updated = self.repository.update(
             document_id,
-            {"name": normalized_name, "updated_at": datetime.now(timezone.utc)},
+            {"name": normalized_name, "updated_at": datetime.now(UTC)},
         )
         if not updated:
             raise DocumentNotFoundError(f"Documento {document_id} no encontrado")

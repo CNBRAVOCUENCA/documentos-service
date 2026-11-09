@@ -1,7 +1,6 @@
 """Pruebas unitarias para las utilidades de validación."""
 
 import pytest
-
 from App.exceptions import FileSizeExceededError, InvalidFilenameError, InvalidPdfError
 from App.utils.validators import ChecksumCalculator, PdfValidator, StringValidator
 
