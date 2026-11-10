@@ -11,11 +11,13 @@ dependencies = [
     "pydantic-settings>=2.5.0",
     "python-multipart>=0.0.9",
     "httpx>=0.24.0,<1.0.0",
+    "prometheus-client>=0.20.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.4.0",
+    "httpx>=0.24.0,<1.0.0",
     "mongomock>=4.3.0",
 ]
 
@@ -35,3 +37,4 @@ src = ["App", "test"]
 select = ["E", "W", "F", "I", "B", "UP", "SIM"]
 # B008: Depends()/File()/Form() en los parámetros es el patrón oficial de FastAPI.
 ignore = ["B008"]
+
