@@ -67,6 +67,13 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |
 
+### Usuario de ejecución en Docker
+
+La imagen ejecuta Uvicorn como el usuario sin privilegios `app`, miembro del
+grupo `app`. La aplicación no necesita escribir en `/app`; los logs se envían a
+stdout. El directorio personal `/home/app` se crea para ese usuario y no se
+amplían los permisos de escritura de `/app`.
+
 ### Límite y validación de archivos subidos
 
 La subida acepta PDFs de hasta 20 MiB. El servicio lee el archivo en fragmentos
