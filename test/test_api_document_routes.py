@@ -11,7 +11,10 @@ VALID_PDF = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    from App.config.settings import settings
+
+    monkeypatch.setattr(settings, "extraction_service_api_key", "test-internal-key")
     from App.main import app
     from App.utils.database import get_client, settings
 
@@ -126,4 +129,80 @@ def test_update_document_name(client):
 
 def test_update_missing_document_returns_404(client):
     response = client.put("/api/v1/documents/999999", json={"name": "Actualizado"})
+    assert response.status_code == 404
+
+
+def test_update_extraction_result_persists_text_and_processed_flag(client):
+    created = client.post(
+        "/api/v1/documents",
+        data={"name": "A"},
+        files={"file": ("a.pdf", VALID_PDF, "application/pdf")},
+    ).json()
+
+    response = client.put(
+        f"/api/v1/documents/{created['id']}/extraction",
+        headers={"X-Internal-API-Key": "test-internal-key"},
+        json={"extracted_text": "Texto extraído"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["extracted_text"] == "Texto extraído"
+    assert response.json()["is_processed"] is True
+    assert client.get(f"/api/v1/documents/{created['id']}").json()["is_processed"] is True
+
+
+def test_update_extraction_result_is_idempotent_for_retries(client):
+    created = client.post(
+        "/api/v1/documents",
+        data={"name": "A"},
+        files={"file": ("a.pdf", VALID_PDF, "application/pdf")},
+    ).json()
+    url = f"/api/v1/documents/{created['id']}/extraction"
+    headers = {"X-Internal-API-Key": "test-internal-key"}
+    payload = {"extracted_text": "Texto extraído"}
+
+    first = client.put(url, headers=headers, json=payload)
+    retry = client.put(url, headers=headers, json=payload)
+
+    assert first.status_code == retry.status_code == 200
+    assert retry.json()["extracted_text"] == first.json()["extracted_text"]
+    assert retry.json()["is_processed"] is True
+
+
+def test_update_extraction_result_requires_internal_key(client):
+    response = client.put("/api/v1/documents/1/extraction", json={"extracted_text": "texto"})
+
+    assert response.status_code == 401
+
+
+def test_update_extraction_result_rejects_invalid_internal_key(client):
+    response = client.put(
+        "/api/v1/documents/1/extraction",
+        headers={"X-Internal-API-Key": "incorrect"},
+        json={"extracted_text": "texto"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_update_extraction_result_requires_configured_key(client, monkeypatch):
+    from App.config.settings import settings
+
+    monkeypatch.setattr(settings, "extraction_service_api_key", "")
+    response = client.put(
+        "/api/v1/documents/1/extraction",
+        headers={"X-Internal-API-Key": "test-internal-key"},
+        json={"extracted_text": "texto"},
+    )
+
+    assert response.status_code == 503
+
+
+def test_update_extraction_result_missing_document_returns_404(client):
+    response = client.put(
+        "/api/v1/documents/999999/extraction",
+        headers={"X-Internal-API-Key": "test-internal-key"},
+        json={"extracted_text": "texto"},
+    )
+
     assert response.status_code == 404

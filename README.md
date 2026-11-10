@@ -51,8 +51,8 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
       vía `GET /documents/{id}/file` — probado con ambos servicios corriendo
       en paralelo, comunicación HTTP real
 - [x] Dockerfile + integración con Traefik mediante Docker Compose y labels
-- [ ] Persistir de vuelta `extracted_text`/`is_processed` cuando el
-      microservicio de Extracción termine de procesar (vía Saga)
+- [x] Persistir `extracted_text`/`is_processed` al completar Extracción mediante
+      un endpoint interno autenticado e idempotente
 
 ## Endpoints
 
@@ -62,13 +62,19 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 | GET | `/api/v1/documents` | Lista documentos (paginado: `skip`, `limit`) |
 | GET | `/api/v1/documents/{id}` | Obtiene los metadatos de un documento por ID |
 | PUT | `/api/v1/documents/{id}` | Actualiza el nombre del documento |
+| PUT | `/api/v1/documents/{id}/extraction` | Persiste el resultado de Extracción (requiere `X-Internal-API-Key`) |
 | GET | `/api/v1/documents/{id}/file` | Descarga el binario del PDF (consumido por `extraccion-service`) |
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |
 
-Nota: `extracted_text` e `is_processed` quedan sin completar al crear el
-documento — se actualizan luego, cuando se conecte el microservicio de
-Extracción de texto.
+Documentos es el dueño de la persistencia del documento. Extracción calcula el
+texto y lo envía con `PUT /api/v1/documents/{id}/extraction`; este servicio
+actualiza juntos `extracted_text` e `is_processed=true` y solo responde éxito
+después de persistir. Las repeticiones del mismo `PUT` son seguras; un documento
+inexistente devuelve 404. La ruta exige el secreto compartido configurado como
+`EXTRACTION_SERVICE_API_KEY` y enviado por Extracción en `X-Internal-API-Key`.
+Configura un secreto aleatorio largo y el mismo valor en ambos servicios antes
+de ejecutar el flujo.
 
 ## Ejecutar con Docker y Traefik
 
@@ -84,6 +90,31 @@ docker compose down
 Traefik detecta el contenedor mediante labels y publica el servicio en
 `http://documentos.localhost`. La API también queda disponible bajo
 `/api/v1/documents`.
+
+### Registro y descubrimiento con Consul
+
+El registro en Consul es opcional: si `CONSUL_HTTP_ADDR` está vacío, el servicio
+arranca sin registrarse. Para habilitarlo, configura las variables del servicio
+en el entorno de despliegue (por ejemplo, en `.env`; nunca publiques el token):
+
+| Variable | Predeterminado | Descripción |
+|---|---|---|
+| `CONSUL_HTTP_ADDR` | vacío | URL del agente Consul, por ejemplo `http://consul:8500` |
+| `CONSUL_HTTP_TOKEN` | vacío | Token ACL enviado como `X-Consul-Token` |
+| `CONSUL_SERVICE_NAME` | `APP_NAME` | Nombre registrado |
+| `CONSUL_SERVICE_PORT` | `8000` | Puerto HTTP de esta instancia |
+| `CONSUL_SERVICE_TAGS` | vacío | Tags separados por comas; Traefik puede consumir aquí sus tags |
+| `CONSUL_SERVICE_ADDRESS` | inferida | IP alcanzable de esta instancia; opcionalmente se puede fijar explícitamente |
+
+En Compose se debe conectar esta instancia y el agente Consul a una red que
+permita el acceso a la API del agente y al endpoint `/health` del servicio.
+Cuando no se define `CONSUL_SERVICE_ADDRESS`, la IP se obtiene de la ruta de red
+hacia el agente, evitando registrar un nombre DNS compartido por réplicas.
+Cada proceso se registra con un ID que incluye su hostname de ejecución. Consul
+consulta `http://<instancia>:<puerto>/health` cada 10 segundos y elimina el
+registro tras aproximadamente un minuto en estado crítico. La instancia se
+registra al iniciar y se desregistra al cerrar; si el registro inicial falla,
+el arranque falla también.
 
 
 ## Documentación teórica

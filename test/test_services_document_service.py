@@ -96,3 +96,27 @@ def test_update_document_name(service, fake_db):
     result = service.update_document(5, "Nuevo")
     assert result.name == "Nuevo"
     fake_db._cols["documents"].update_one.assert_called_once()
+
+
+def test_update_extraction_result_persists_text_and_marks_processed(service, fake_db):
+    existing = {
+        "id": 5, "name": "Contrato", "file_path": "p", "checksum": "x", "file_size": 1,
+        "file_content": None, "original_filename": "a.pdf", "extracted_text": None, "is_processed": False,
+    }
+    updated = {**existing, "extracted_text": "Texto", "is_processed": True}
+    fake_db._cols["documents"].find_one.side_effect = [existing, updated]
+
+    result = service.update_extraction_result(5, "Texto")
+
+    assert result.extracted_text == "Texto"
+    assert result.is_processed is True
+    update_fields = fake_db._cols["documents"].update_one.call_args.args[1]["$set"]
+    assert update_fields["extracted_text"] == "Texto"
+    assert update_fields["is_processed"] is True
+
+
+def test_update_extraction_result_missing_document_raises(service, fake_db):
+    fake_db._cols["documents"].find_one.return_value = None
+
+    with pytest.raises(DocumentNotFoundError):
+        service.update_extraction_result(999, "Texto")

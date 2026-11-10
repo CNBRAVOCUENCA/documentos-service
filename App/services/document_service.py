@@ -64,6 +64,21 @@ class DocumentService:
             raise DocumentNotFoundError(f"Documento {document_id} no encontrado")
         return updated
 
+    def update_extraction_result(self, document_id: int, extracted_text: str) -> Document:
+        """Persiste el resultado de extracción comunicado por el servicio dueño."""
+        self._get_or_raise(document_id)
+        updated = self.repository.update(
+            document_id,
+            {
+                "extracted_text": extracted_text,
+                "is_processed": True,
+                "updated_at": datetime.now(UTC),
+            },
+        )
+        if not updated:
+            raise DocumentNotFoundError(f"Documento {document_id} no encontrado")
+        return updated
+
     def _get_or_raise(self, document_id: int) -> Document:
         document = self.repository.get_by_id(document_id)
         if not document:

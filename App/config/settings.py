@@ -15,6 +15,14 @@ class Settings(BaseSettings):
     database_timeout_ms: int = 5000
 
     api_v1_prefix: str = "/api/v1"
+    extraction_service_api_key: str = ""
+
+    consul_http_addr: str = ""
+    consul_http_token: str = ""
+    consul_service_name: str | None = None
+    consul_service_port: int = 8000
+    consul_service_tags: str = ""
+    consul_service_address: str = ""
 
 
 settings = Settings()
