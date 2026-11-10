@@ -51,8 +51,8 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
       vía `GET /documents/{id}/file` — probado con ambos servicios corriendo
       en paralelo, comunicación HTTP real
 - [x] Dockerfile + integración con Traefik mediante Docker Compose y labels
-- [ ] Persistir de vuelta `extracted_text`/`is_processed` cuando el
-      microservicio de Extracción termine de procesar (vía Saga)
+- [x] Persistir `extracted_text`/`is_processed` al completar Extracción mediante
+      un endpoint interno autenticado e idempotente
 
 ## Endpoints
 
@@ -62,13 +62,19 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 | GET | `/api/v1/documents` | Lista documentos (paginado: `skip`, `limit`) |
 | GET | `/api/v1/documents/{id}` | Obtiene los metadatos de un documento por ID |
 | PUT | `/api/v1/documents/{id}` | Actualiza el nombre del documento |
+| PUT | `/api/v1/documents/{id}/extraction` | Persiste el resultado de Extracción (requiere `X-Internal-API-Key`) |
 | GET | `/api/v1/documents/{id}/file` | Descarga el binario del PDF (consumido por `extraccion-service`) |
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |
 
-Nota: `extracted_text` e `is_processed` quedan sin completar al crear el
-documento — se actualizan luego, cuando se conecte el microservicio de
-Extracción de texto.
+Documentos es el dueño de la persistencia del documento. Extracción calcula el
+texto y lo envía con `PUT /api/v1/documents/{id}/extraction`; este servicio
+actualiza juntos `extracted_text` e `is_processed=true` y solo responde éxito
+después de persistir. Las repeticiones del mismo `PUT` son seguras; un documento
+inexistente devuelve 404. La ruta exige el secreto compartido configurado como
+`EXTRACTION_SERVICE_API_KEY` y enviado por Extracción en `X-Internal-API-Key`.
+Configura un secreto aleatorio largo y el mismo valor en ambos servicios antes
+de ejecutar el flujo.
 
 ## Ejecutar con Docker y Traefik
 

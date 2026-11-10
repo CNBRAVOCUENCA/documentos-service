@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     database_timeout_ms: int = 5000
 
     api_v1_prefix: str = "/api/v1"
+    extraction_service_api_key: str = ""
 
 
 settings = Settings()

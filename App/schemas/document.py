@@ -26,3 +26,9 @@ class DocumentUpdate(BaseModel):
     """Campos modificables por el dueño del documento."""
 
     name: str
+
+
+class ExtractionResultUpdate(BaseModel):
+    """Resultado enviado por el servicio autenticado de Extracción."""
+
+    extracted_text: str
