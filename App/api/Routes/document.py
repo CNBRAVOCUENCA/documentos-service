@@ -12,6 +12,7 @@ from App.repositories.document_repository import DocumentRepository
 from App.schemas.document import DocumentResponse, DocumentUpdate, ExtractionResultUpdate
 from App.services.document_service import DocumentService
 from App.utils.database import get_db
+from App.utils.validators import PdfValidator
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -42,7 +43,7 @@ async def create_document(
 ) -> DocumentResponse:
     """Sube y valida un PDF, y da de alta el documento (sin extraer texto todavía)."""
     try:
-        payload = await file.read()
+        payload = await PdfValidator.read_upload(file)
         document = service.create_document(name, file.filename, payload)
         return DocumentResponse.model_validate(document)
     finally:
