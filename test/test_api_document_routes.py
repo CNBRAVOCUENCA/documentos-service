@@ -1,11 +1,14 @@
 """Pruebas de integración de la API de Documentos, usando mongomock (sin Mongo real)."""
 
+import asyncio
 import os
 
-os.environ.setdefault("DATABASE_URL", "mongomock://localhost")
-
+import httpx
 import pytest
+from App.utils.validators import PdfValidator
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("DATABASE_URL", "mongomock://localhost")
 
 VALID_PDF = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
 
@@ -64,6 +67,92 @@ def test_create_document_invalid_name_returns_400(client):
         files={"file": ("a.pdf", VALID_PDF, "application/pdf")},
     )
     assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        (b"", "El archivo está vacío"),
+        (b"not a PDF", "El archivo no tiene una firma PDF válida"),
+    ],
+)
+def test_create_document_rejects_invalid_pdf_without_persisting(client, payload, expected_detail):
+    response = client.post(
+        "/api/v1/documents",
+        data={"name": "Inválido"},
+        files={"file": ("invalido.pdf", payload, "application/pdf")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == expected_detail
+    assert client.get("/api/v1/documents").json() == []
+
+
+def test_create_document_accepts_file_at_size_limit(client, monkeypatch):
+    monkeypatch.setattr(PdfValidator, "MAX_FILE_SIZE_BYTES", 64)
+    payload = b"%PDF-" + b"x" * (64 - len(b"%PDF-"))
+
+    response = client.post(
+        "/api/v1/documents",
+        data={"name": "En el límite"},
+        files={"file": ("limite.pdf", payload, "application/pdf")},
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["file_size"] == 64
+
+
+def test_create_document_rejects_file_over_size_limit_without_persisting(client, monkeypatch):
+    monkeypatch.setattr(PdfValidator, "MAX_FILE_SIZE_BYTES", 64)
+    payload = b"%PDF-" + b"x" * (64 - len(b"%PDF-") + 1)
+
+    response = client.post(
+        "/api/v1/documents",
+        data={"name": "Demasiado grande"},
+        files={"file": ("grande.pdf", payload, "application/pdf")},
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "El archivo excede el tamaño máximo permitido (64 bytes)"
+    assert client.get("/api/v1/documents").json() == []
+
+
+@pytest.mark.parametrize("declared_length", [None, "1"])
+def test_create_document_rejects_oversized_stream_without_reliable_content_length(
+    client, monkeypatch, declared_length
+):
+    monkeypatch.setattr(PdfValidator, "MAX_FILE_SIZE_BYTES", 64)
+    boundary = "upload-boundary"
+    payload = b"%PDF-" + b"x" * (64 - len(b"%PDF-") + 1)
+    parts = [
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nGrande\r\n".encode(),
+        (
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; "
+            f"filename=\"grande.pdf\"\r\nContent-Type: application/pdf\r\n\r\n"
+        ).encode(),
+        payload,
+        f"\r\n--{boundary}--\r\n".encode(),
+    ]
+
+    async def body():
+        for part in parts:
+            yield part
+
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    if declared_length is not None:
+        headers["Content-Length"] = declared_length
+
+    async def send_request():
+        transport = httpx.ASGITransport(app=client.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as async_client:
+            response = await async_client.post("/api/v1/documents", headers=headers, content=body())
+            documents = await async_client.get("/api/v1/documents")
+        return response, documents
+
+    response, documents = asyncio.run(send_request())
+    assert response.status_code == 413
+    assert response.json()["detail"] == "El archivo excede el tamaño máximo permitido (64 bytes)"
+    assert documents.json() == []
 
 
 def test_get_missing_document_returns_404(client):

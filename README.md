@@ -67,6 +67,20 @@ mínimo para pasarlo (verde), y recién ahí se refactoriza si hace falta.
 | DELETE | `/api/v1/documents/{id}` | Elimina un documento |
 | GET | `/health` | Health check |
 
+### Límite y validación de archivos subidos
+
+La subida acepta PDFs de hasta 20 MiB. El servicio lee el archivo en fragmentos
+y rechaza el primer byte que excede ese máximo con HTTP 413, sin depender de
+`Content-Length` (que puede faltar o no representar el tamaño real del archivo).
+Un archivo vacío o sin la firma inicial `%PDF-` devuelve HTTP 400; estas
+comprobaciones no validan por completo la estructura del PDF, que aún puede
+resultar corrupto y fallar durante la extracción. Los rechazos no se persisten.
+
+El límite aplica al archivo, no al cuerpo multipart completo. Si se configura
+un máximo de cuerpo en el proxy, debe permitir 20 MiB más el espacio de los
+campos y delimitadores multipart para que la aplicación pueda aplicar su propio
+límite al archivo.
+
 Documentos es el dueño de la persistencia del documento. Extracción calcula el
 texto y lo envía con `PUT /api/v1/documents/{id}/extraction`; este servicio
 actualiza juntos `extracted_text` e `is_processed=true` y solo responde éxito
