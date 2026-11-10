@@ -91,6 +91,31 @@ Traefik detecta el contenedor mediante labels y publica el servicio en
 `http://documentos.localhost`. La API también queda disponible bajo
 `/api/v1/documents`.
 
+### Registro y descubrimiento con Consul
+
+El registro en Consul es opcional: si `CONSUL_HTTP_ADDR` está vacío, el servicio
+arranca sin registrarse. Para habilitarlo, configura las variables del servicio
+en el entorno de despliegue (por ejemplo, en `.env`; nunca publiques el token):
+
+| Variable | Predeterminado | Descripción |
+|---|---|---|
+| `CONSUL_HTTP_ADDR` | vacío | URL del agente Consul, por ejemplo `http://consul:8500` |
+| `CONSUL_HTTP_TOKEN` | vacío | Token ACL enviado como `X-Consul-Token` |
+| `CONSUL_SERVICE_NAME` | `APP_NAME` | Nombre registrado |
+| `CONSUL_SERVICE_PORT` | `8000` | Puerto HTTP de esta instancia |
+| `CONSUL_SERVICE_TAGS` | vacío | Tags separados por comas; Traefik puede consumir aquí sus tags |
+| `CONSUL_SERVICE_ADDRESS` | inferida | IP alcanzable de esta instancia; opcionalmente se puede fijar explícitamente |
+
+En Compose se debe conectar esta instancia y el agente Consul a una red que
+permita el acceso a la API del agente y al endpoint `/health` del servicio.
+Cuando no se define `CONSUL_SERVICE_ADDRESS`, la IP se obtiene de la ruta de red
+hacia el agente, evitando registrar un nombre DNS compartido por réplicas.
+Cada proceso se registra con un ID que incluye su hostname de ejecución. Consul
+consulta `http://<instancia>:<puerto>/health` cada 10 segundos y elimina el
+registro tras aproximadamente un minuto en estado crítico. La instancia se
+registra al iniciar y se desregistra al cerrar; si el registro inicial falla,
+el arranque falla también.
+
 
 ## Documentación teórica
 

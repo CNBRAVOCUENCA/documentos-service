@@ -13,6 +13,11 @@ COPY App ./App
 RUN pip install --no-cache-dir "setuptools>=68" wheel \
     && pip install --no-cache-dir --no-build-isolation .
 
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /home/app --create-home --shell /usr/sbin/nologin app
+
 EXPOSE 8000
+
+USER app
 
 CMD ["uvicorn", "App.main:app", "--host", "0.0.0.0", "--port", "8000"]

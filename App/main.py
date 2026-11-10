@@ -8,13 +8,19 @@ from App.api import document_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.logging_config import configurar_logging
+from App.utils.consul import ConsulRegistration
 from App.utils.database import ensure_indexes, ping_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_indexes()
-    yield
+    consul = ConsulRegistration()
+    await consul.register()
+    try:
+        yield
+    finally:
+        await consul.deregister()
 
 
 # Disable API documentation in production (when debug=False)

@@ -10,12 +10,12 @@ dependencies = [
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
     "python-multipart>=0.0.9",
+    "httpx>=0.24.0,<1.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.4.0",
-    "httpx>=0.24.0,<1.0.0",
     "mongomock>=4.3.0",
 ]
 
