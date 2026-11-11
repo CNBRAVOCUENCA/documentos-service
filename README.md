@@ -163,6 +163,20 @@ pip install -e ".[dev]"
 pytest test/ -v
 ```
 
+## Escaneo de seguridad
+
+El workflow `Security scan` audita las dependencias de runtime fijadas en
+`uv.lock` y construye/escanea la imagen Docker con Trivy. Se ejecuta en cada PR,
+push a `main`/`master`, semanalmente (lunes 06:00 UTC) y manualmente desde
+GitHub Actions. La política es: **falla el job cualquier hallazgo HIGH o CRITICAL que tenga
+parche disponible** (`ignore-unfixed: true`). Los HIGH/CRITICAL sin parche de la
+imagen base (paquetes de Debian en estado *affected*, sin versión corregida)
+**se siguen mostrando** en la tabla del log, pero no bloquean: no hay acción
+posible desde este repo hasta que Debian publique el arreglo, y en ese momento el
+escaneo semanal empieza a fallar y obliga a reconstruir la imagen. No se usan
+`.trivyignore` ni otros filtros. Los detalles quedan visibles en el log del workflow. También verifica que la imagen se ejecute como
+un usuario distinto de root.
+
 ## Stack
 
 - Python 3.12+
