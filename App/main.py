@@ -9,6 +9,7 @@ from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.logging_config import configurar_logging
 from App.telemetry import install_telemetry
+from App.tracing import configurar_trazas
 from App.utils.consul import ConsulRegistration
 from App.utils.database import ensure_indexes, ping_database
 
@@ -42,6 +43,9 @@ app = FastAPI(
 )
 
 install_telemetry(app, settings.app_name)
+# Después de install_telemetry: el middleware de OpenTelemetry queda por fuera y el
+# span ya está activo cuando se calculan las métricas y el x-trace-id.
+configurar_trazas(app, settings.app_name)
 register_exception_handlers(app)
 app.include_router(document_router, prefix=settings.api_v1_prefix)
 
