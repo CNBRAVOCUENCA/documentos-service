@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
-
 from App.config.settings import Settings
 from App.utils.consul import ConsulRegistration
 
